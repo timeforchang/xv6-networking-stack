@@ -105,6 +105,13 @@
 #define E1000_RCTL_BAM            0x00008000
 #define E1000_RCTL_BSIZE          0x00000000
 #define E1000_RCTL_SECRC          0x04000000
+#define E1000_RCTL_LPE            0x00000020    /* long packet enable */
+#define E1000_RCTL_LBM_NO         0x00000000    /* no loopback mode */
+#define E1000_RCTL_RDMTS_HALF     0x00000000    /* rx desc min threshold size */
+#define E1000_RCTL_MO_0           0x00000000    /* multicast offset 11:0 */
+#define E1000_RCTL_BSEX           0x02000000    /* Buffer size extension */
+#define E1000_RCTL_SZ_4096        0x00030000    /* rx buffer size 4096 */
+#define E1000_RCTL_SECRC          0x04000000    /* Strip Ethernet CRC */
 
 /**
  * Ethernet Device Transmit Descriptor Command Field
@@ -147,6 +154,8 @@
 #define EEPROM_ADDR_MAP_ETHER_ADDR_1    0x00
 #define EEPROM_ADDR_MAP_ETHER_ADDR_2    0x01
 #define EEPROM_ADDR_MAP_ETHER_ADDR_3    0x02
+
+#define RXRING_LEN 128
 
 //Trasmit Buffer Descriptor
 // The Transmit Descriptor Queue must be aligned on 16-byte boundary
@@ -372,16 +381,21 @@ int e1000_init(struct pci_func *pcif, void** driver, uint8_t *mac_addr) {
   e1000_reg_write(E1000_RDBAH, 0x00000000, the_e1000);
   e1000_reg_write(E1000_RDLEN, (E1000_RBD_SLOTS*16) << 7, the_e1000);
   e1000_reg_write(E1000_RDH, 0x00000000, the_e1000);
-  e1000_reg_write(E1000_RDT, 0x00000000, the_e1000);
+  e1000_reg_write(E1000_RDT, RXRING_LEN, the_e1000);
   //enable interrupts
   e1000_reg_write(E1000_IMS, E1000_IMS_RXSEQ | E1000_IMS_RXO | E1000_IMS_RXT0|E1000_IMS_TXQE, the_e1000);
   //Receive control Register.
   e1000_reg_write(E1000_RCTL,
-                E1000_RCTL_EN |
+                  E1000_RCTL_EN |
+                  !E1000_RCTL_LPE |
+                  E1000_RCTL_LBM_NO |
+                  E1000_RCTL_RDMTS_HALF |
+                  E1000_RCTL_MO_0 |
                   E1000_RCTL_BAM |
-                  E1000_RCTL_BSIZE | 0x00000008,//|
-                //  E1000_RCTL_SECRC,
-                the_e1000);
+                  E1000_RCTL_BSEX |
+                  E1000_RCTL_SZ_4096 |
+                  E1000_RCTL_SECRC,
+                  the_e1000);
 cprintf("e1000:Interrupt enabled mask:0x%x\n", e1000_reg_read(E1000_IMS, the_e1000));
   //Register interrupt handler here...
   picenable(the_e1000->irq_line);
