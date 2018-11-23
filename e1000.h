@@ -5,6 +5,7 @@
 #include "defs.h"
 #include "memlayout.h"
 #include "string.h"
+#include "mmu.h"
 
 // Some macro adapted from linux e1000_hw.h
 

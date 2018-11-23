@@ -1,8 +1,8 @@
 #include "e1000.h"
 
 // LAB 6: Your driver code here
-struct e1000_tx_desc tx_desc_buf[TXRING_LEN] __attribute__ ((aligned (PGSIZE)));
-struct e1000_data tx_data_buf[TXRING_LEN] __attribute__ ((aligned (PGSIZE)));
+struct e1000_tx_desc tx_desc_buf[TXRING_LEN] __attribute__ ((aligned(PGSIZE)));
+struct e1000_data tx_data_buf[TXRING_LEN] __attribute__ ((aligned(PGSIZE)));
 
 static void
 init_desc(){
@@ -57,9 +57,9 @@ e1000_transmit(const char *buf, unsigned int len)
   {
     return -1;
   }
-  length = length > DATA_SIZE ? DATA_SIZE : length;
-  memmove(&tx_data_buf[tail], addr, length);
-  tail_desc->lower.flags.length = length;
+  len = len > DATA_SIZE ? DATA_SIZE : len;
+  memmove(&tx_data_buf[tail], addr, len);
+  tail_desc->lower.flags.length = len;
   tail_desc->upper.fields.status = 0;
   tail_desc->lower.data |=  (E1000_TXD_CMD_RS |
                  E1000_TXD_CMD_EOP);
