@@ -6,9 +6,8 @@
 #include "defs.h"
 #include "param.h"
 #include "fs.h"
-#include "spinlock.h"
-#include "sleeplock.h"
 #include "file.h"
+#include "spinlock.h"
 
 struct devsw devsw[NDEV];
 struct {
@@ -130,7 +129,7 @@ filewrite(struct file *f, char *addr, int n)
     // and 2 blocks of slop for non-aligned writes.
     // this really belongs lower down, since writei()
     // might be writing a device like the console.
-    int max = ((MAXOPBLOCKS-1-1-2) / 2) * 512;
+    int max = ((LOGSIZE-1-1-2) / 2) * 512;
     int i = 0;
     while(i < n){
       int n1 = n - i;
@@ -155,3 +154,54 @@ filewrite(struct file *f, char *addr, int n)
   panic("filewrite");
 }
 
+int
+filewriteable(struct file * f)
+{
+    if (f->type == FD_PIPE)
+        return pipewriteable(f->pipe);
+    if (f->type == FD_INODE)
+        return writeablei(f->ip, f->off);
+    else
+        return -1;
+    
+    return 0;
+}
+
+int
+filereadable(struct file * f)
+{
+    if (f->type == FD_PIPE)
+        return pipereadable(f->pipe);
+    if (f->type == FD_INODE)
+        return readablei(f->ip, f->off);
+    else
+        return -1;
+     
+    return 0;
+}
+
+int
+fileselect(struct file *f, int *selid, struct spinlock *lk)
+{
+    if (f->type == FD_PIPE)
+        return pipeselect(f->pipe, selid, lk);
+    if (f->type == FD_INODE)
+        return selecti(f->ip, selid, lk);
+    else
+        return -1;
+ 
+    return 0;
+}
+
+int
+fileclrsel(struct file *f, int *selid)
+{
+    if (f->type == FD_PIPE)
+        return pipeclrsel(f->pipe, selid);
+    if (f->type == FD_INODE)
+        return clrseli(f->ip, selid);
+    else
+        return -1;
+ 
+    return 0;
+}

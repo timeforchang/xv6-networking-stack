@@ -5,7 +5,6 @@
 #include "param.h"
 #include "traps.h"
 #include "spinlock.h"
-#include "sleeplock.h"
 #include "fs.h"
 #include "file.h"
 #include "mmu.h"
@@ -41,11 +40,19 @@ uartinit(void)
   // enable interrupts.
   inb(COM1+2);
   inb(COM1+0);
+  picenable(IRQ_COM1);
   ioapicenable(IRQ_COM1, 0);
 
   // Announce that we're here.
   for(p="xv6...\n"; *p; p++)
     uartputc(*p);
+}
+
+void
+uartprintcstr(char * p)
+{
+	for(; *p; p++)
+		uartputc(*p);
 }
 
 void
@@ -60,7 +67,7 @@ uartputc(int c)
   outb(COM1+0, c);
 }
 
-static int
+int
 uartgetc(void)
 {
   if(!uart)

@@ -39,7 +39,7 @@ sys_kill(void)
 int
 sys_getpid(void)
 {
-  return myproc()->pid;
+  return proc->pid;
 }
 
 int
@@ -50,24 +50,21 @@ sys_sbrk(void)
 
   if(argint(0, &n) < 0)
     return -1;
-  addr = myproc()->sz;
+  addr = proc->sz;
   if(growproc(n) < 0)
     return -1;
   return addr;
 }
 
 int
-sys_sleep(void)
+timed_sleep(int n)
 {
-  int n;
   uint ticks0;
 
-  if(argint(0, &n) < 0)
-    return -1;
   acquire(&tickslock);
   ticks0 = ticks;
   while(ticks - ticks0 < n){
-    if(myproc()->killed){
+    if(proc->killed){
       release(&tickslock);
       return -1;
     }
@@ -75,6 +72,17 @@ sys_sleep(void)
   }
   release(&tickslock);
   return 0;
+}
+
+int
+sys_sleep(void)
+{
+  int n;
+
+  if(argint(0, &n) < 0)
+    return -1;
+  
+  return timed_sleep(n);
 }
 
 // return how many clock tick interrupts have occurred

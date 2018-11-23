@@ -4,13 +4,6 @@
 #include "syscall.h"
 #include "select.h"
 
-/** Test to see if setting the bits in fd sets actually works
- *
- * @see FD_ZERO()
- * @see FD_SET()
- * @see FD_ISSET()
- * @return 0 if nothing has gone wrong, 1 if there is some failure
- */
 int
 test0(void)
 {
@@ -38,19 +31,10 @@ test0(void)
        }
    }
    
-   // if you reach this point, nothing has gone wrong so print a success message
-   printf(1, "TEST0 SUCCESS!\n");
+
    return 0;
 }
 
-/** Test to see if selecting on pipes works correctly
- *
- * @see sys_select()
- * @see FD_ZERO()
- * @see FD_SET()
- * @see FD_ISSET()
- * @return 0 if nothing has gone wrong, 1 if there is some failure
- */
 int
 test1(void)
 {
@@ -64,26 +48,6 @@ test1(void)
 
     if (fork() == 0)
     {
-        close(fds[0]);
-        fd_set readfds, writefds;
-        FD_ZERO(&readfds);
-        FD_ZERO(&writefds);
-        FD_SET(fds[1],&writefds);
-        if (select(nfds, &readfds, &writefds) == 0)
-        {
-            close(fds[1]);
-            if (!FD_ISSET(fds[1],&writefds))
-            {
-                printf(1, "Child: select returned but write fd not set! \t FAIL\n");
-                return 1;
-            }
-        }
-
-        exit();
-
-    } 
-    else
-    {
         close(fds[1]);
         fd_set readfds, writefds;
         FD_ZERO(&readfds);
@@ -94,26 +58,36 @@ test1(void)
             close(fds[0]);
             if (!FD_ISSET(fds[0],&readfds))
             {
-                printf(1, "Parent: select returned but read fd not set! \t FAIL\n");
+                printf(1, "Child: select returned but read fd not set!\n");
+                return 1;
+            }
+        }
+
+        exit();
+
+    } 
+    else
+    {
+        close(fds[0]);
+        fd_set readfds, writefds;
+        FD_ZERO(&readfds);
+        FD_ZERO(&writefds);
+        FD_SET(fds[1],&writefds);
+        if (select(nfds, &readfds, &writefds) == 0)
+        {
+            close(fds[1]);
+            if (!FD_ISSET(fds[1],&writefds))
+            {
+                printf(1, "Parent: select returned but write fd not set!\n");
                 wait();
                 return 1;
-            } 
+            }
         }
         wait();
     }
-    // if you reached this point, nothing has gone wrong so return 0 and print success message
-    printf(1, "TEST1 SUCCESS!\n");
     return 0;
 }
 
-/** Test to see if selecting on console works correctly
- *
- * @see sys_select()
- * @see FD_ZERO()
- * @see FD_SET()
- * @see FD_ISSET()
- * @return 0 if nothing has gone wrong, 1 if there is some failure
- */
 int
 test2(void)
 {
@@ -128,61 +102,31 @@ test2(void)
     FD_SET(0,&readfds);
     FD_SET(1,&writefds);
     FD_SET(2,&writefds);
-    int correct = 0;
-    // only fd 0 is readable, and should be set
-    // fds 1 and 2 are only writeable, so they should only be set
-    // to check, then you need all 6 cases to be correct
     if (select(nfds, &readfds, &writefds) == 0)
     {
         for (int fd=0; fd<nfds; fd++)
         {
             if (FD_ISSET(fd,&readfds))
             {
-                printf(1, "Console read fd %d set\n", fd);
-                if (fd == 0) {
-                    correct++;
-                }
+                printf(1, "Console fd 0 set\n");
             }
             else
             {
-                printf(1, "Console read fd %d not set\n", fd);
-                if (fd != 0) {
-                    correct++;
-                }
-
+                printf(1, "Console fd 0 not set\n");
             }
             if (FD_ISSET(fd,&writefds))
             {
                 printf(1, "Console write fd %d set\n", fd);
-                if (fd != 0) {
-                    correct++;
-                }
             }
             else
             {
                 printf(1, "Console write fd %d not set\n", fd);
-                if (fd == 0) {
-                    correct++;
-                }
             }
         }
-    }
-    printf(1, "correct: %d\n", correct);
-    // if the aformentioned 6 cases are all correct, print a success message
-    if (correct == 6) {
-        printf(1, "TEST2 SUCCESS!\n");
     }
     return 0;
 }
 
-/** Test to see if selecting on console works correctly when console hasn't been set to write prior
- *
- * @see sys_select()
- * @see FD_ZERO()
- * @see FD_SET()
- * @see FD_ISSET()
- * @return 0 if nothing has gone wrong, 1 if there is some failure
- */
 int
 test3(void)
 {
@@ -195,10 +139,6 @@ test3(void)
     FD_ZERO(&readfds);
     FD_ZERO(&writefds);
     FD_SET(0,&readfds);
-    int correct = 0;
-    // only need to check if fd 0 is set to readable
-    // select sleeps until something is entered, so you won't go into the 
-    // if statement until something is written into the console
     if (select(nfds, &readfds, &writefds) == 0)
     {
         for (int fd=0; fd<nfds; fd++)
@@ -206,9 +146,6 @@ test3(void)
             if (FD_ISSET(fd,&readfds))
             {
                 printf(1, "Console fd 0 set\n");
-                if (fd == 0) {
-                    correct = 1;
-                }
             }
             else
             {
@@ -225,21 +162,9 @@ test3(void)
 
         }
     }
-    // if 0 is still readable, print a success message
-    if (correct) {
-        printf(1, "TEST3 SUCCESS!\n");
-    }
     return 0;
 }
 
-/** Test to see if selecting on pipe works correctly when pipe hasn't been set to write prior
- *
- * @see sys_select()
- * @see FD_ZERO()
- * @see FD_SET()
- * @see FD_ISSET()
- * @return 0 if nothing has gone wrong, 1 if there is some failure
- */
 int
 test3p(void)
 {
@@ -256,7 +181,6 @@ test3p(void)
     fd_set readfds, writefds;
     FD_ZERO(&readfds);
     FD_ZERO(&writefds);
-    int correct = 0;
     if (fork() == 0)
     {
         FD_SET(fds[0],&readfds);
@@ -268,12 +192,6 @@ test3p(void)
                 if (FD_ISSET(fd,&readfds))
                 {
                     printf(1, "fd %d set read\n", fd);
-                    // the fd created will only be fd 3 provided no other pipes are currently open
-                    // it should also be readable by now since select has slept until something was
-                    // written to it
-                    if (fd == fds[0]) {
-                        correct = 1;
-                    }
                 }
                 else
                 {
@@ -294,32 +212,17 @@ test3p(void)
     }
     else
     {
-        printf(1, "Sleeping for 100\n");
-        sleep(100);
+        printf(1, "Sleeping for 5\n");
+        sleep(5);
         printf(1, "Writing to pipe\n");
         write(fds[1],wbuf,32);
         wait();
     }
-    // if fd 3 is now readable, print a success message
-    if (correct) {
-        printf(1, "TEST3P SUCCESS!\n");
-    }
     return 0;
 }
 
-/** Main method to run all of the tests
- *
- * @param argc number of strings pointed to by argv
- * @param argv argument vector to be passed into the function
- * @see test0()
- * @see test1()
- * @see test2()
- * @see test3p()
- * @see test3()
- * The method will always call exit() at the end or else it will fall off the end of the routine.
- * Method signature conforms to how the main method signature is supposed to be written
- * The method itself does not use any of the arguments passed to it.
- */
+
+
 int
 main(void)
 {
