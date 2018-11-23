@@ -393,4 +393,5 @@ cprintf("e1000:Interrupt enabled mask:0x%x\n", e1000_reg_read(E1000_IMS, the_e10
 }
 
 void e1000_recv(void *driver, uint8_t* pkt, uint16_t length) {
+  struct e1000 *e1000 = (struct e1000*)driver;
 }
