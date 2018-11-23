@@ -201,12 +201,13 @@ struct e1000 {
 };
 
 static void e1000_reg_write(uint32_t reg_addr, uint32_t value, struct e1000 *the_e1000) {
+  cprintf("Write value 0x%x to E1000 I/O port 0x%x\n", value, reg_addr);
   *(uint32_t*)(the_e1000->membase + reg_addr) = value;
 }
 
 static uint32_t e1000_reg_read(uint32_t reg_addr, struct e1000 *the_e1000) {
   uint32_t value = *(uint32_t*)(the_e1000->membase + reg_addr);
-  //cprintf("Read value 0x%x from E1000 I/O port 0x%x\n", value, reg_addr);
+  cprintf("Read value 0x%x from E1000 I/O port 0x%x\n", value, reg_addr);
 
   return value;
 }
