@@ -1,14 +1,4 @@
 // Routines to let C code use special x86 instructions.
-#ifndef _X86_H
-#define _X86_H
-
-#include "types.h"
-
-static __inline void
-invlpg(void *addr)
-{
-	__asm __volatile("invlpg (%0)" : : "r" (addr) : "memory");
-}
 
 static inline uchar
 inb(ushort port)
@@ -19,6 +9,14 @@ inb(ushort port)
   return data;
 }
 
+static inline uint32_t
+inl(int port)
+{
+	uint32_t data;
+	asm volatile("inl %w1,%0" : "=a" (data) : "d" (port));
+	return data;
+}
+
 static inline void
 insl(int port, void *addr, int cnt)
 {
@@ -26,16 +24,6 @@ insl(int port, void *addr, int cnt)
                "=D" (addr), "=c" (cnt) :
                "d" (port), "0" (addr), "1" (cnt) :
                "memory", "cc");
-}
-
-
-static inline uint32_t
-inl(int port)
-{
-  uint32_t data;
-  asm volatile("inl %w1,%0" : "=a" (data) : "d" (port));
-
-  return data;
 }
 
 static inline void
@@ -51,18 +39,18 @@ outw(ushort port, ushort data)
 }
 
 static inline void
+outl(int port, uint32_t data)
+{
+	asm volatile("outl %0,%w1" : : "a" (data), "d" (port));
+}
+
+static inline void
 outsl(int port, const void *addr, int cnt)
 {
   asm volatile("cld; rep outsl" :
                "=S" (addr), "=c" (cnt) :
                "d" (port), "0" (addr), "1" (cnt) :
                "cc");
-}
-
-static inline void
-outl(int port, uint32_t data)
-{
-  asm volatile("outl %0,%w1" : : "a" (data), "d" (port));
 }
 
 static inline void
@@ -82,7 +70,6 @@ stosl(void *addr, int data, int cnt)
                "0" (addr), "1" (cnt), "a" (data) :
                "memory", "cc");
 }
-
 
 struct segdesc;
 
@@ -208,49 +195,3 @@ struct trapframe {
   ushort ss;
   ushort padding6;
 };
-
-static __inline uint32_t read_eflags(void) __attribute__((always_inline));
-static __inline void write_eflags(uint32_t eflags) __attribute__((always_inline));
-static __inline uint32_t read_ebp(void) __attribute__((always_inline));
-static __inline uint32_t read_esp(void) __attribute__((always_inline));
-
-static __inline void
-breakpoint(void)
-{
-  __asm __volatile("int3");
-}
-
-static __inline uint32_t
-read_eflags(void)
-{
-  uint32_t eflags;
-  __asm __volatile("pushfl; popl %0" : "=r" (eflags));
-
-  return eflags;
-}
-
-static __inline void
-write_eflags(uint32_t eflags)
-{
-  __asm __volatile("pushl %0; popfl" : : "r" (eflags));
-}
-
-static __inline uint32_t
-read_ebp(void)
-{
-  uint32_t ebp;
-  __asm __volatile("movl %%ebp,%0" : "=r" (ebp));
-
-  return ebp;
-}
-
-static __inline uint32_t
-read_esp(void)
-{
-  uint32_t esp;
-  __asm __volatile("movl %%esp,%0" : "=r" (esp));
-
-  return esp;
-}
-
-#endif

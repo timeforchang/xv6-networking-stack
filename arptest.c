@@ -8,6 +8,5 @@ int main(void) {
   if(arp("mynet0", ip, mac, MAC_SIZE) < 0) {
     printf(1, "ARP for IP:%s Failed.\n", ip);
   }
-  printf(1, "IP %s has mac %s\n", ip, mac);
   exit();
 }

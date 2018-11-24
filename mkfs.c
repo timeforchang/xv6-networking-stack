@@ -6,17 +6,10 @@
 #include <assert.h>
 
 #define stat xv6_stat  // avoid clash with host struct stat
-#define fd_set xv6_fd_set
-//#include "types.h"
+#include "types.h"
 #include "fs.h"
 #include "stat.h"
 #include "param.h"
-
-// types.h
-typedef unsigned int   uint;
-typedef unsigned short ushort;
-typedef unsigned char  uchar;
-
 
 #ifndef static_assert
 #define static_assert(a, b) do { switch (0) case 0: case (a): ; } while (0)

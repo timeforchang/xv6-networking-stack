@@ -15,14 +15,6 @@ strcpy(char *s, char *t)
   return os;
 }
 
-int
-strcmp(const char *p, const char *q)
-{
-  while(*p && *p == *q)
-    p++, q++;
-  return (uchar)*p - (uchar)*q;
-}
-
 uint
 strlen(char *s)
 {
@@ -32,17 +24,6 @@ strlen(char *s)
     ;
   return n;
 }
-
- int 
- strnlen(const char *s, uint size) 
- { 
-   int n; 
-  
-   for (n = 0; size > 0 && *s != '\0'; s++, size--) 
-     n++; 
-   return n; 
- } 
- 
 
 void*
 memset(void *dst, int c, uint n)
@@ -92,17 +73,6 @@ stat(char *n, struct stat *st)
   return r;
 }
 
-int
-atoi(const char *s)
-{
-  int n;
-
-  n = 0;
-  while('0' <= *s && *s <= '9')
-    n = n*10 + *s++ - '0';
-  return n;
-}
-
 void*
 memmove(void *vdst, void *vsrc, int n)
 {
@@ -114,5 +84,3 @@ memmove(void *vdst, void *vsrc, int n)
     *dst++ = *src++;
   return vdst;
 }
-
-

@@ -11,10 +11,10 @@
 
 //Generic NIC device driver container
 struct nic_device {
-  //void *driver;
+  void *driver;
   uint8_t mac_addr[6];
-  //void (*send_packet) (void *driver, uint8_t* pkt, uint16_t length);
-  //void (*recv_packet) (void *driver, uint8_t* pkt, uint16_t length);
+  void (*send_packet) (void *driver, uint8_t* pkt, uint16_t length);
+  void (*recv_packet) (void *driver, uint8_t* pkt, uint16_t length);
 };
 
 //Holds the instances of nic_devices for loaded devices

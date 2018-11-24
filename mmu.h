@@ -42,15 +42,13 @@
 // various segment selectors.
 #define SEG_KCODE 1  // kernel code
 #define SEG_KDATA 2  // kernel data+stack
-#define SEG_KCPU  3  // kernel per-cpu data
-#define SEG_UCODE 4  // user code
-#define SEG_UDATA 5  // user data+stack
-#define SEG_TSS   6  // this process's task state
+#define SEG_UCODE 3  // user code
+#define SEG_UDATA 4  // user data+stack
+#define SEG_TSS   5  // this process's task state
 
 // cpu->gdt[NSEGS] holds the above segments.
-#define NSEGS     7
+#define NSEGS     6
 
-//PAGEBREAK!
 #ifndef __ASSEMBLER__
 // Segment Descriptor
 struct segdesc {
@@ -149,6 +147,7 @@ struct segdesc {
 #define PTE_FLAGS(pte)  ((uint)(pte) &  0xFFF)
 
 #ifndef __ASSEMBLER__
+typedef uint pte_t;
 
 // Task state segment format
 struct taskstate {

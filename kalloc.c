@@ -11,6 +11,7 @@
 
 void freerange(void *vstart, void *vend);
 extern char end[]; // first address after kernel loaded from ELF file
+                   // defined by the kernel linker script in kernel.ld
 
 struct run {
   struct run *next;
@@ -21,30 +22,6 @@ struct {
   int use_lock;
   struct run *freelist;
 } kmem;
-
-struct page_info {
-};
-
-int
-kinsert(pde_t *pgdir, struct page_info *pp, char *va, int perm)
-{
-
-	return 0; //Placeholder so the empty function will compile
-}
-
-void
-kremove(pde_t *pgdir, void *va)
-{
-
-}
-
-struct page_info *
-klookup(pde_t *pgdir, void *va, pte_t **pte_store)
-{
-
-	return 0;
-}
-
 
 // Initialization happens in two phases.
 // 1. main() calls kinit1() while still using entrypgdir to place just
@@ -74,7 +51,6 @@ freerange(void *vstart, void *vend)
   for(; p + PGSIZE <= (char*)vend; p += PGSIZE)
     kfree(p);
 }
-
 //PAGEBREAK: 21
 // Free the page of physical memory pointed at by v,
 // which normally should have been returned by a
@@ -89,7 +65,7 @@ kfree(char *v)
     panic("kfree");
 
   // Fill with junk to catch dangling refs.
-  //memset(v, 1, PGSIZE); //Commented out for the lab2 exercise
+  memset(v, 1, PGSIZE);
 
   if(kmem.use_lock)
     acquire(&kmem.lock);

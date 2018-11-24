@@ -2,24 +2,18 @@
 // Input is from the keyboard or serial port.
 // Output is written to the screen and serial port.
 
-#include "stdio.h"
-#include "stdarg.h"
 #include "types.h"
 #include "defs.h"
 #include "param.h"
 #include "traps.h"
 #include "spinlock.h"
+#include "sleeplock.h"
 #include "fs.h"
 #include "file.h"
 #include "memlayout.h"
 #include "mmu.h"
 #include "proc.h"
 #include "x86.h"
-
-int uartgetc(void);
-int kbdgetc(void);
-
-void cputchar(int);
 
 static void consputc(int);
 
@@ -56,35 +50,6 @@ printint(int xx, int base, int sign)
 }
 //PAGEBREAK: 50
 
-static void
-putch(int ch, int *cnt)
-{
-  cputchar(ch);
-  *cnt++;
-}
-
-int
-vcprintf(const char *fmt, va_list ap)
-{
-  int cnt = 0;
-
-  vprintfmt((void*)putch, &cnt, fmt, ap);
-  return cnt;
-}
-
-int
-cprintf(const char *fmt, ...)
-{
-  va_list ap;
-  int cnt;
-
-  va_start(ap, fmt);
-  cnt = vcprintf(fmt, ap);
-  va_end(ap);
-
-  return cnt;
-}
-/*
 // Print to the console. only understands %d, %x, %p, %s.
 void
 cprintf(char *fmt, ...)
@@ -137,7 +102,7 @@ cprintf(char *fmt, ...)
   if(locking)
     release(&cons.lock);
 }
-*/
+
 void
 panic(char *s)
 {
@@ -146,7 +111,8 @@ panic(char *s)
 
   cli();
   cons.locking = 0;
-  cprintf("cpu with apicid %d: panic: ", cpu->apicid);
+  // use lapiccpunum so that we can call panic from mycpu()
+  cprintf("lapicid %d: panic: ", lapicid());
   cprintf(s);
   cprintf("\n");
   getcallerpcs(&s, pcs);
@@ -222,34 +188,6 @@ struct {
 
 #define C(x)  ((x)-'@')  // Control-x
 
-
-// return the next input character from the console, or 0 if none waiting
-int
-cons_getc(void)
-{
-  int c;
-
-  // poll for any pending input characters,
-  // so that this function works even when interrupts are disabled
-  // (e.g., when called from the kernel monitor).
-  consoleintr(uartgetc);
-  consoleintr(kbdgetc);
-  acquire(&cons.lock);
-
-  // grab the next character from the input buffer.
-  if (input.r != input.w) {
-    c = input.buf[input.r++];
-    if (input.r == INPUT_BUF)
-      input.r = 0;
-    release(&cons.lock);
-    return c;
-  }
-  release(&cons.lock);
-  return 0;
-}
-
-
-    
 void
 consoleintr(int (*getc)(void))
 {
@@ -283,8 +221,6 @@ consoleintr(int (*getc)(void))
         if(c == '\n' || c == C('D') || input.e == input.r+INPUT_BUF){
           input.w = input.e;
           wakeup(&input.r);
-          // Wake up anything waiting on console read
-          // LAB 4: Your code here
         }
       }
       break;
@@ -307,7 +243,7 @@ consoleread(struct inode *ip, char *dst, int n)
   acquire(&cons.lock);
   while(n > 0){
     while(input.r == input.w){
-      if(proc->killed){
+      if(myproc()->killed){
         release(&cons.lock);
         ilock(ip);
         return -1;
@@ -349,52 +285,6 @@ consolewrite(struct inode *ip, char *buf, int n)
   return n;
 }
 
-/**
- * Indicates if the console can be written without blocking.
- * @param {struct inode *} ip - the inode to be checked
- * @return 0 for true, >0 for false, -1 for error.
- */
-int
-consolewriteable(struct inode* ip)
-{
-    return 0;
-}
-
-/**
- * Indicates if the console can be read without blocking.
- * @param {struct inode *} ip - the inode to be checked
- * @return 1 for true, 0 for false, -1 for error.
- */
-int
-consolereadable(struct inode* ip)
-{
-
-  // LAB 4: Your code here
-
-  return 0;
-}
-
-// Console select
-//
-// Adds the selid to be woken up.
-int
-consoleselect(struct inode *ip, int *selid, struct spinlock * lk)
-{
-    // LAB 4: Your code here
-    
-    return 0;
-}
-
-// Console select clear
-//
-// Removes the selid from being woken up.
-int
-consoleclrsel(struct inode *ip, int *selid)
-{
-    // LAB 4: Your code here
-    
-    return 0;
-}
 void
 consoleinit(void)
 {
@@ -402,36 +292,8 @@ consoleinit(void)
 
   devsw[CONSOLE].write = consolewrite;
   devsw[CONSOLE].read = consoleread;
-  devsw[CONSOLE].writeable = consolewriteable;
-  devsw[CONSOLE].readable = consolereadable;
-  devsw[CONSOLE].select = consoleselect;
-  devsw[CONSOLE].clrsel = consoleclrsel;
-  initselproc(&devsw[CONSOLE].selprocread);
   cons.locking = 1;
 
-  picenable(IRQ_KBD);
   ioapicenable(IRQ_KBD, 0);
 }
 
-void
-cputchar(int c)
-{
-  consputc(c);
-}
-
-int
-getchar(void)
-{
-  int c;
-
-  while ((c = cons_getc()) == 0)
-    /* do nothing */;
-  return c;
-}
-
-int
-iscons(int fdnum)
-{
-  // used by readline
-  return 1;
-}

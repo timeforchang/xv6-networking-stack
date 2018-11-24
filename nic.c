@@ -10,9 +10,9 @@ int get_device(char* interface, struct nic_device** nd) {
    * For now, since we have only one device loaded at a time,
    * this will suffice
    */
-   //if(nic_devices[0].send_packet == 0 || nic_devices[0].recv_packet == 0) {
-   //  return -1;
-   //}
+   if(nic_devices[0].send_packet == 0 || nic_devices[0].recv_packet == 0) {
+     return -1;
+   }
    *nd = &nic_devices[0];
 
    return 0;

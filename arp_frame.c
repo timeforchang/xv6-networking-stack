@@ -9,7 +9,6 @@
 #include "types.h"
 #include "util.h"
 #include "defs.h"
-#include "string.h"
 #include "arp_frame.h"
 
 #define BROADCAST_MAC "FF:FF:FF:FF:FF:FF"
@@ -43,7 +42,7 @@ void pack_mac(uchar* dest, char* src) {
 	}
 }
 
-uint32_t get_ip (const char* ip, uint len) {
+uint32_t get_ip (char* ip, uint len) {
     uint ipv4  = 0;
     char arr[4];
     int n1 = 0;
@@ -80,15 +79,11 @@ uint32_t htonl(uint32_t v) {
   return htons(v >> 16) | (htons((uint16_t) v) << 16);
 }
 
-int create_eth_arp_frame(uint8_t* smac, const char *srcIpAddr, uint8_t *dmac, const char* ipAddr, bool is_reply, uint8_t* macMsg, struct ethr_hdr *eth) {
-        if (dmac) {
-          memmove(eth->dmac, dmac, 6);
-        } else {
-	  pack_mac(eth->dmac, BROADCAST_MAC);
-        }
+int create_eth_arp_frame(uint8_t* smac, char* ipAddr, struct ethr_hdr *eth) {
+	cprintf("Create ARP frame\n");
+	char* dmac = BROADCAST_MAC;
 
-	cprintf("Create ARP frame, sending to %x:%x:%x:%x:%x:%x\n", eth->dmac[0], eth->dmac[1], eth->dmac[2], eth->dmac[3], eth->dmac[4], eth->dmac[5]);
-
+	pack_mac(eth->dmac, dmac);
 	memmove(eth->smac, smac, 6);
 
 	//ether type = 0x0806 for ARP
@@ -102,13 +97,13 @@ int create_eth_arp_frame(uint8_t* smac, const char *srcIpAddr, uint8_t *dmac, co
 	eth->prosize = 0x04;
 
 	//arp request
-	eth->opcode = is_reply ? htons(2) : htons(1);
+	eth->opcode = htons(1);
 
 	/** ARP packet internal data filling **/
 	memmove(eth->arp_smac, smac, 6);
-	memmove(eth->arp_dmac, macMsg, 6); // not needed for the request
+	pack_mac(eth->arp_dmac, dmac); //this can potentially be igored for the request
 
-	eth->sip = get_ip(srcIpAddr, strlen(srcIpAddr));
+	eth->sip = get_ip("192.168.1.1", strlen("192.168.1.1"));
 
 	*(uint32_t*)(&eth->dip) = get_ip(ipAddr, strlen(ipAddr));
 
@@ -152,30 +147,30 @@ void unpack_mac(uint8_t* mac, char* mac_str) {
 }
 
 // parse the ip value
-void parse_ip (uint32_t ip, char* ip_str) {
+void parse_ip (uint ip, char* ip_str) {
 
-    uint32_t v = 0xFF;
-    uint32_t ip_vals[4];
+    uint v = 255;
+    uint ip_vals[4];
 
-    for (int i = 0; i < 4; i++) {
-        ip_vals[i] = (ip & v) >> (8 * i);
+    for (int i = 0; i >= 0; i--) {
+        ip_vals[i] = ip && v;
         v  = v<<8;
     }
 
     int c = 0;
     for (int i = 0; i < 4; i++) {
-        uint32_t ip1 = ip_vals[i];
+        uint ip1 = ip_vals[i];
 
         if (ip1 == 0) {
             ip_str[c++] = '0';
-            ip_str[c++] = '.';
+            ip_str[c++] = ':';
         }
         else {
             //unsigned int n_digits = 0;
             char arr[3];
             int j = 0;
 
-            while (ip1 > 0 && j < 3) {
+            while (ip1 > 0) {
                 arr[j++] = (ip1 % 10) + '0';
                 ip1 /= 10;
             }
@@ -184,7 +179,7 @@ void parse_ip (uint32_t ip, char* ip_str) {
                 ip_str[c++] = arr[j];
             }
 
-            ip_str[c++] = '.';
+            ip_str[c++] = ':';
         }
     }
 
@@ -193,25 +188,22 @@ void parse_ip (uint32_t ip, char* ip_str) {
 }
 
 // ethernet packet arrived; parse and get the MAC address
-int parse_arp_packet(const struct ethr_hdr *eth, const char *my_ip, bool expected_reply, uint8_t *received_from_mac, char *received_from_ip, uint8_t *mac_msg) {
-        uint16_t expected_opcode = expected_reply ? 0x0200 : 0x0100;
-
-	if (eth->ethr_type != 0x0608) {
-		cprintf("Not an ARP packet: %x\n", eth->ethr_type);
-		return -1;
+void parse_arp_reply(struct ethr_hdr eth) {
+	if (eth.ethr_type != 0x0806) {
+		cprintf("Not an ARP packet");
+		return;
 	}
 
-	if (eth->protype != 0x0008) {
+	if (eth.protype != 0x0800) {
 		cprintf("Not IPV4 protocol\n");
-		return -1;
+		return;
 	}
 
-	if (eth->opcode != expected_opcode) {
-		cprintf("Wrong opcode: %x\n", eth->opcode);
-		return -1;
+	if (eth.opcode != 2) {
+		cprintf("Not an ARP reply\n");
+		return;
 	}
 
-        /*
 	char* my_mac = (char*)"FF:FF:FF:FF:FF:FF";
 	char dst_mac[18];
 
@@ -219,35 +211,22 @@ int parse_arp_packet(const struct ethr_hdr *eth, const char *my_ip, bool expecte
 
 	if (strcmp((const char*)my_mac, (const char*)dst_mac)) {
 		cprintf("Not the intended recipient\n");
-		return -1;
+		return;
 	}
-        */
 
 	//parse sip; it should be equal to the one we sent
+	char* my_ip = (char*)"255.255.255.255";
 	char dst_ip[16];
 
-	parse_ip(*(uint32_t*)(&eth->dip), dst_ip);
+	parse_ip(eth.dip, dst_ip);
 
-	if (strcmp(my_ip, (const char*)dst_ip)) {
-	    cprintf("Not the intended recipient! Expected %s, got %s\n", my_ip, dst_ip);
-	    return -1;
+	if (strcmp((const char*)my_ip, (const char*)dst_ip)) {
+	    cprintf("Not the intended recipient\n");
+	    return;
 	}
 
-        if (received_from_ip) {
-	  parse_ip(eth->sip, received_from_ip);
-        }
+	char mac[18];
+	unpack_mac(eth.arp_smac, mac);
 
-	//char mac[18];
-	//unpack_mac(eth->arp_smac, mac_str);
-        if (mac_msg) {
-          memmove(mac_msg, eth->arp_smac, 6);
-        }
-
-        if (received_from_mac) {
-          memmove(received_from_mac, eth->smac, 6);
-        }
-
-	//cprintf((char*)mac);
-
-        return 0;
+	cprintf((char*)mac);
 }

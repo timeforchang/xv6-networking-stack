@@ -7,7 +7,6 @@
 
 #include "types.h"
 #include "defs.h"
-#include "e1000.h"
 
 int sys_arp(void) {
   char *ipAddr, *interface, *arpResp;
@@ -24,33 +23,4 @@ int sys_arp(void) {
   }
 
   return 0;
-}
-
-int sys_arpserv(void) {
-  char *interface;
-
-  if(argstr(0, &interface) < 0) {
-    cprintf("ERROR:sys_arpserv:Failed to fetch arguments");
-    return -1;
-  }
-
-  return recv_arpRequest(interface);
-}
-
-int sys_arp_receive(void) {
-  char *buff;
-  int size;
-
-  if(argint(1, &size) < 0 || argptr(0, &buff, size) < 0) {
-    cprintf("ERROR: Failed to fetch arguments from arp_receive\n");
-    return -1;
-  }
-
-  int return_size = e1000_receive(buff, size);
-  if(return_size == 0) {
-    cprintf("Error: e1000 receive failed\n");
-    return -1;
-  }
-
-  return return_size;
 }

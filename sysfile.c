@@ -11,9 +11,10 @@
 #include "mmu.h"
 #include "proc.h"
 #include "fs.h"
+#include "spinlock.h"
+#include "sleeplock.h"
 #include "file.h"
 #include "fcntl.h"
-#include "select.h"
 
 // Fetch the nth word-sized system call argument as a file descriptor
 // and return both the descriptor and the corresponding struct file.
@@ -25,7 +26,7 @@ argfd(int n, int *pfd, struct file **pf)
 
   if(argint(n, &fd) < 0)
     return -1;
-  if(fd < 0 || fd >= NOFILE || (f=proc->ofile[fd]) == 0)
+  if(fd < 0 || fd >= NOFILE || (f=myproc()->ofile[fd]) == 0)
     return -1;
   if(pfd)
     *pfd = fd;
@@ -40,10 +41,11 @@ static int
 fdalloc(struct file *f)
 {
   int fd;
+  struct proc *curproc = myproc();
 
   for(fd = 0; fd < NOFILE; fd++){
-    if(proc->ofile[fd] == 0){
-      proc->ofile[fd] = f;
+    if(curproc->ofile[fd] == 0){
+      curproc->ofile[fd] = f;
       return fd;
     }
   }
@@ -96,7 +98,7 @@ sys_close(void)
 
   if(argfd(0, &fd, &f) < 0)
     return -1;
-  proc->ofile[fd] = 0;
+  myproc()->ofile[fd] = 0;
   fileclose(f);
   return 0;
 }
@@ -372,7 +374,8 @@ sys_chdir(void)
 {
   char *path;
   struct inode *ip;
-
+  struct proc *curproc = myproc();
+  
   begin_op();
   if(argstr(0, &path) < 0 || (ip = namei(path)) == 0){
     end_op();
@@ -385,9 +388,9 @@ sys_chdir(void)
     return -1;
   }
   iunlock(ip);
-  iput(proc->cwd);
+  iput(curproc->cwd);
   end_op();
-  proc->cwd = ip;
+  curproc->cwd = ip;
   return 0;
 }
 
@@ -431,7 +434,7 @@ sys_pipe(void)
   fd0 = -1;
   if((fd0 = fdalloc(rf)) < 0 || (fd1 = fdalloc(wf)) < 0){
     if(fd0 >= 0)
-      proc->ofile[fd0] = 0;
+      myproc()->ofile[fd0] = 0;
     fileclose(rf);
     fileclose(wf);
     return -1;
@@ -440,47 +443,3 @@ sys_pipe(void)
   fd[1] = fd1;
   return 0;
 }
-
-/* This system call looks for fds within its sets that are ready to read or write.
- * If any fd is ready, it returns immediately with the returned sets containing
- * the fds that are ready. On the other hand, if none are ready it sleeps on all the
- * fds passed in until at least one is ready.
- *
- * Requirements:
- *
- * 1. Verify each fd passed in in the two sets is open and valid. If not, skip it.
- * 2. If an fd is in a set, call filereadable/writeable on it to check if it
- *    readable or writeable.
- * 3. If none of the fds are readable/writeable, call fileselect on each one to
- *    set your wakeup call on that fd.
- * 4. Go to sleep on your select channel.
- * 5. Once you wakeup, go back to step 1 and repeat. At least one should be readable/writeable now.
- * 6. Make sure to call fileclrsel to clear any remaining wakeup calls before you return.
- * 7. Be sure you have turned off any bits in the sets that are not readable/writeable before returning.
- */
-int
-sys_select(void)
-{
-    int nfds;
-    fd_set *readfds, *writefds, retreadfds, retwritefds;
-    FD_ZERO(&retreadfds);
-    FD_ZERO(&retwritefds);
-
-    if (argint(0, (void*)&nfds) < 0)
-        return -1;
-    if (argptr(1, (void*)&readfds, sizeof(readfds)) < 0)
-        return -1;
-    if (argptr(2, (void*)&writefds, sizeof(writefds)) < 0)
-        return -1;
-    acquire(&proc->selectlock);
-
-    // LAB4: Your Code Here
-
-    *readfds = retreadfds;
-    *writefds = retwritefds;
-
-    release(&proc->selectlock);
-    return 0;
-}
-
-

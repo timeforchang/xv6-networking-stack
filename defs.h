@@ -1,5 +1,3 @@
-#ifndef DEFS_H_
-#define DEFS_H_
 struct buf;
 struct context;
 struct file;
@@ -8,15 +6,9 @@ struct pipe;
 struct proc;
 struct rtcdate;
 struct spinlock;
+struct sleeplock;
 struct stat;
 struct superblock;
-struct page_info;
-
-int             timed_sleep(int n);
-
-// arp.c
-int 		send_arpRequest(char* , char* , char* );
-int             recv_arpRequest(char *interface);
 
 // bio.c
 void            binit(void);
@@ -26,8 +18,7 @@ void            bwrite(struct buf*);
 
 // console.c
 void            consoleinit(void);
-int     cprintf(const char *fmt, ...);
-//void            cprintf(char*, ...);
+void            cprintf(char*, ...);
 void            consoleintr(int(*)(void));
 void            panic(char*) __attribute__((noreturn));
 
@@ -42,24 +33,6 @@ void            fileinit(void);
 int             fileread(struct file*, char*, int n);
 int             filestat(struct file*, struct stat*);
 int             filewrite(struct file*, char*, int n);
-
-/**
- * Indicates if a file can be written without blocking.
- * @param {struct file *} f - the file to be checked
- * @return 0 for true, >0 for false, -1 for error.
- */
-int             filewriteable(struct file *);
-
-/**
- * Indicates if a file can be read without blocking.
- * @param {struct file *} f - the file to be checked
- * @return 0 for true, >0 for false, -1 for error.
- */
-int             filereadable(struct file *);
-
-int             fileselect(struct file *, int *, struct spinlock *);
-
-int             fileclrsel(struct file *, int *);
 
 // fs.c
 void            readsb(int dev, struct superblock *sb);
@@ -80,27 +53,6 @@ int             readi(struct inode*, char*, uint, uint);
 void            stati(struct inode*, struct stat*);
 int             writei(struct inode*, char*, uint, uint);
 
-
-/**
- * Indicates if a inode can be read without blocking.
- * @param {struct inode *} i - the inode to be checked
- * @param {uint} off - offset into the file (unused for devices)
- * @return 0 for true, >0 for false, -1 for error.
- */
-int             readablei(struct inode*, uint);
-
-/**
- * Indicates if a inode can be written without blocking.
- * @param {struct inode *} i - the inode to be checked
- * @param {uint} off - offset into the file (unused for devices)
- * @return 0 for true, >0 for false, -1 for error.
- */
-int             writeablei(struct inode*, uint);
-
-int             selecti(struct inode*, int *, struct spinlock * lk);
-
-int             clrseli(struct inode*, int *);
-
 // ide.c
 void            ideinit(void);
 void            ideintr(void);
@@ -112,20 +64,17 @@ extern uchar    ioapicid;
 void            ioapicinit(void);
 
 // kalloc.c
-int 									kinsert(pde_t *pgdir, struct page_info *pp, char *va, int perm);
-void 									kremove(pde_t *pgdir, void *va);
-struct page_info * 		klookup(pde_t *pgdir, void *va, pte_t **pte_store);
-char*           			kalloc(void);
-void            			kfree(char*);
-void            			kinit1(void*, void*);
-void            			kinit2(void*, void*);
+char*           kalloc(void);
+void            kfree(char*);
+void            kinit1(void*, void*);
+void            kinit2(void*, void*);
 
 // kbd.c
 void            kbdintr(void);
 
 // lapic.c
 void            cmostime(struct rtcdate *r);
-int             cpunum(void);
+int             lapicid(void);
 extern volatile uint*    lapic;
 void            lapiceoi(void);
 void            lapicinit(void);
@@ -152,36 +101,20 @@ void            pipeclose(struct pipe*, int);
 int             piperead(struct pipe*, char*, int);
 int             pipewrite(struct pipe*, char*, int);
 
-
-/**
- * Indicates if a pipe can be written without blocking.
- * @param {struct pipe *} p - the pipe to be checked
- * @return 0 for true, >0 for false, -1 for error.
- */
-int             pipewriteable(struct pipe*);
-
-
-/**
- * Indicates if a pipe can be read without blocking.
- * @param {struct pipe *} p - the pipe to be checked
- * @return 0 for true, >0 for false, -1 for error.
- */
-int             pipereadable(struct pipe*);
-
-int             pipeselect(struct pipe*, int *, struct spinlock *);
-
-int             pipeclrsel(struct pipe*, int *);
-
 //PAGEBREAK: 16
 // proc.c
+int             cpuid(void);
 void            exit(void);
 int             fork(void);
 int             growproc(int);
 int             kill(int);
+struct cpu*     mycpu(void);
+struct proc*    myproc();
 void            pinit(void);
 void            procdump(void);
 void            scheduler(void) __attribute__((noreturn));
 void            sched(void);
+void            setproc(struct proc*);
 void            sleep(void*, struct spinlock*);
 void            userinit(void);
 int             wait(void);
@@ -199,6 +132,12 @@ void            initlock(struct spinlock*, char*);
 void            release(struct spinlock*);
 void            pushcli(void);
 void            popcli(void);
+
+// sleeplock.c
+void            acquiresleep(struct sleeplock*);
+void            releasesleep(struct sleeplock*);
+int             holdingsleep(struct sleeplock*);
+void            initsleeplock(struct sleeplock*, char*);
 
 // string.c
 int             memcmp(const void*, const void*, uint);
@@ -230,10 +169,8 @@ extern struct spinlock tickslock;
 void            uartinit(void);
 void            uartintr(void);
 void            uartputc(int);
-void		uartprintcstr(char*);
 
 // vm.c
-void 						tlb_invalidate(pde_t *pgdir, void *va);
 void            seginit(void);
 void            kvmalloc(void);
 pde_t*          setupkvm(void);
@@ -248,12 +185,9 @@ void            switchuvm(struct proc*);
 void            switchkvm(void);
 int             copyout(pde_t*, uint, void*, uint);
 void            clearpteu(pde_t *pgdir, char *uva);
-void * 		mmio_map_region(uint pa, uint size);
+
+//arp.c
+int send_arpRequest(char* interface, char* ipAddr, char* arpResp);
 
 // number of elements in fixed-size array
 #define NELEM(x) (sizeof(x)/sizeof((x)[0]))
-
-#define assert(x) \
-  do { if (!(x)) panic("assertion failed!"); } while (0)
-
-#endif
