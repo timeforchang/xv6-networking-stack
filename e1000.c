@@ -14,6 +14,7 @@
 #include "nic.h"
 #include "memlayout.h"
 #include "util.h"
+#include "filter.h"
 
 #define E1000_RBD_SLOTS			128
 #define E1000_TBD_SLOTS			128
@@ -402,6 +403,9 @@ cprintf("e1000:Interrupt enabled mask:0x%x\n", e1000_reg_read(E1000_IMS, the_e10
 
 
   *driver = the_e1000;
+  ebtable = (struct filter_table*) kalloc();
+  ebtable->init = 1;
+
   return 0;
 }
 

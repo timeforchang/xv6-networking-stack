@@ -5,7 +5,14 @@
 
 struct filter_entry {
   char dir[4];
-  uint8_t dmac[6];
+  uint8_t mac[6];
 };
+
+struct filter_table {
+	int init;
+	struct filter_entry *entries[ENTRYLIMIT];
+};
+
+struct filter_table *ebtable;
 
 #endif
