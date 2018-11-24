@@ -8,8 +8,6 @@ struct filter_entry {
   uint8_t dmac[6];
 };
 
-struct filter_table {
-	struct filter_entry *entries[ENTRYLIMIT];
-};
+static struct filter_entry *entries[ENTRYLIMIT];
 
 #endif
