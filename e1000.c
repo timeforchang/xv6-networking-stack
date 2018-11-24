@@ -225,6 +225,13 @@ static void udelay(unsigned int u)
 void e1000_send(void *driver, uint8_t *pkt, uint16_t length )
 {
   struct e1000 *e1000 = (struct e1000*)driver;
+  ethr_hdr* eth = (ethr_hdr*) pkt;
+  char* my_mac = (char*)"FF:FF:FF:FF:FF:FF";
+  char dst_mac[18];
+  unpack_mac(eth->arp_dmac, dst_mac);
+  if (strcmp((const char*)my_mac, (const char*)dst_mac)) {
+    cprintf("going to FF:FF:FF:FF:FF:FF\n");
+  }
   cprintf("e1000 driver: Sending packet of length:0x%x %x starting at physical address:0x%x\n", length, sizeof(struct ethr_hdr), V2P(e1000->tx_buf[e1000->tbd_tail]));
   memset(e1000->tbd[e1000->tbd_tail], 0, sizeof(struct e1000_tbd));
   memmove((e1000->tx_buf[e1000->tbd_tail]), pkt, length);
