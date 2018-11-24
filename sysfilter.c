@@ -7,6 +7,7 @@
 
 #include "types.h"
 #include "defs.h"
+#include "nic.h"
 
 int sys_filter(void) {
   char *macAddr, *dir, *interface;

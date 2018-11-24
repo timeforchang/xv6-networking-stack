@@ -14,10 +14,10 @@
 #include "nic.h"
 #include "memlayout.h"
 #include "util.h"
-#include "filter.h"
 
 #define E1000_RBD_SLOTS			128
 #define E1000_TBD_SLOTS			128
+#define ENTRYLIMIT 32
 
 //Bit 31:20 are not writable. Always read 0b.
 #define E1000_IOADDR_OFFSET 0x00000000
@@ -183,8 +183,6 @@ struct filter_entry {
   char dir[4];
   uint8_t mac[6];
 };
-
-#define ENTRYLIMIT 32
 
 struct e1000 {
 	struct e1000_tbd *tbd[E1000_TBD_SLOTS];
@@ -353,7 +351,7 @@ int e1000_init(struct pci_func *pcif, void** driver, uint8_t *mac_addr) {
   }
 
   struct filter_entry *entry_tmp = (struct filter_entry*) kalloc();
-  for(int i = 0; i < ENTRYLIMT; i++) {
+  for(int i = 0; i < ENTRYLIMIT; i++) {
     the_e1000->ebtable[i] = (struct filter_entry*) entry_tmp;
   }
 

@@ -18,5 +18,6 @@ int e1000_init(struct pci_func *pcif, void **driver, uint8_t *mac_addr);
 
 void e1000_send(void *e1000, uint8_t* pkt, uint16_t length);
 void e1000_recv(void *e1000, uint8_t* pkt, uint16_t length);
+void e1000_filter(void *e1000, char* mac, char* dir);
 
 #endif

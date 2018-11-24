@@ -26,7 +26,7 @@ char* sbrk(int);
 int sleep(int);
 int uptime(void);
 int arp(char*, char*, char*, int);
-int filter(char*, char*);
+int filter(char*, char*, char*);
 
 // ulib.c
 int stat(char*, struct stat*);
