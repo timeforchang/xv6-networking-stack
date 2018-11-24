@@ -405,6 +405,7 @@ cprintf("e1000:Interrupt enabled mask:0x%x\n", e1000_reg_read(E1000_IMS, the_e10
   *driver = the_e1000;
   ebtable = (struct filter_table*) kalloc();
   ebtable->init = 1;
+  initlock(&ebtable->lock, "ebtable");
 
   return 0;
 }
