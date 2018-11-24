@@ -180,6 +180,7 @@ struct packet_buf {
 };
 
 struct filter_entry {
+  int used;
   char dir[4];
   uint8_t mac[6];
 };
@@ -353,6 +354,7 @@ int e1000_init(struct pci_func *pcif, void** driver, uint8_t *mac_addr) {
   struct filter_entry *entry_tmp = (struct filter_entry*) kalloc();
   for(int i = 0; i < ENTRYLIMIT; i++) {
     the_e1000->ebtable[i] = (struct filter_entry*) entry_tmp;
+    the_e1000->ebtable[i]->used = 0;
   }
 
   //Now for the packet buffers in Receive Ring. Can fit 2 packet buf in 1 page
@@ -422,5 +424,21 @@ void e1000_recv(void *driver, uint8_t* pkt, uint16_t length) {
 }
 
 void e1000_filter(void *driver, char* mac, char* dir) {
+  struct e1000 *e1000 = (struct e1000*)driver;
   cprintf("filtering MAC: %s going/coming %s\n", mac, dir);
+  int set = 0;
+  for(int i = 0; i < ENTRYLIMIT; i++) {
+    if(e1000->ebtable[i]->used == 0) {
+      struct filter_entry *new_entry = (struct filter_entry*) kalloc();
+      new_entry->used = 1;
+      new_entry->mac = mac;
+      new_entry->dir = dir;
+      e1000->ebtable[i] = new_entry;
+      set = 1;
+      break;
+    }
+  }
+  if (set == 0) {
+    cprintf("filter set failed\n");
+  }
 }
