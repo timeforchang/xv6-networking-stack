@@ -7,8 +7,10 @@
  *https://pdos.csail.mit.edu/6.828/2017/readings/hardware/8254x_GBe_SDM.pdf
  */
 #include "types.h"
+#include "arp_frame.h"
 #include "nic.h"
 #include "pci.h"
+
 
 struct e1000;
 

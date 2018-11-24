@@ -11,9 +11,9 @@
 #include "e1000.h"
 #include "defs.h"
 #include "x86.h"
-#include "arp_frame.h"
 #include "nic.h"
 #include "memlayout.h"
+#include "util.h"
 
 #define E1000_RBD_SLOTS			128
 #define E1000_TBD_SLOTS			128
@@ -225,30 +225,36 @@ static void udelay(unsigned int u)
 void e1000_send(void *driver, uint8_t *pkt, uint16_t length )
 {
   struct e1000 *e1000 = (struct e1000*)driver;
-  ethr_hdr* eth = (ethr_hdr*) pkt;
-  char* my_mac = (char*)"FF:FF:FF:FF:FF:FF";
+  struct ethr_hdr* eth = (struct ethr_hdr*) pkt;
+  char* broadcast_mac = (char*)"FF:FF:FF:FF:FF:FF";
   char dst_mac[18];
   unpack_mac(eth->arp_dmac, dst_mac);
-  if (strcmp((const char*)my_mac, (const char*)dst_mac)) {
+  if (strcmp(broadcast_mac, dst_mac) == 0) {
     cprintf("going to FF:FF:FF:FF:FF:FF\n");
-  }
-  cprintf("e1000 driver: Sending packet of length:0x%x %x starting at physical address:0x%x\n", length, sizeof(struct ethr_hdr), V2P(e1000->tx_buf[e1000->tbd_tail]));
-  memset(e1000->tbd[e1000->tbd_tail], 0, sizeof(struct e1000_tbd));
-  memmove((e1000->tx_buf[e1000->tbd_tail]), pkt, length);
-  e1000->tbd[e1000->tbd_tail]->addr = (uint64_t)(uint32_t)V2P(e1000->tx_buf[e1000->tbd_tail]);
-	e1000->tbd[e1000->tbd_tail]->length = length;
-	e1000->tbd[e1000->tbd_tail]->cmd = (E1000_TDESC_CMD_RS | E1000_TDESC_CMD_EOP | E1000_TDESC_CMD_IFCS);
-  e1000->tbd[e1000->tbd_tail]->cso = 0;
-	// update the tail so the hardware knows it's ready
-	int oldtail = e1000->tbd_tail;
-	e1000->tbd_tail = (e1000->tbd_tail + 1) % E1000_TBD_SLOTS;
-	e1000_reg_write(E1000_TDT, e1000->tbd_tail, e1000);
+    cprintf("packet blocked from sending!\n");
+  } else {
+    cprintf("dst_mac: %s\n", dst_mac);
+    cprintf("my_mac: %s\n", broadcast_mac);
 
-	while( !E1000_TDESC_STATUS_DONE(e1000->tbd[oldtail]->status) )
-	{
-		udelay(2);
-	}
-  cprintf("after while loop\n");
+    cprintf("e1000 driver: Sending packet of length:0x%x %x starting at physical address:0x%x\n", length, sizeof(struct ethr_hdr), V2P(e1000->tx_buf[e1000->tbd_tail]));
+    memset(e1000->tbd[e1000->tbd_tail], 0, sizeof(struct e1000_tbd));
+    memmove((e1000->tx_buf[e1000->tbd_tail]), pkt, length);
+    e1000->tbd[e1000->tbd_tail]->addr = (uint64_t)(uint32_t)V2P(e1000->tx_buf[e1000->tbd_tail]);
+    e1000->tbd[e1000->tbd_tail]->length = length;
+    e1000->tbd[e1000->tbd_tail]->cmd = (E1000_TDESC_CMD_RS | E1000_TDESC_CMD_EOP | E1000_TDESC_CMD_IFCS);
+    e1000->tbd[e1000->tbd_tail]->cso = 0;
+    // update the tail so the hardware knows it's ready
+    int oldtail = e1000->tbd_tail;
+    e1000->tbd_tail = (e1000->tbd_tail + 1) % E1000_TBD_SLOTS;
+    e1000_reg_write(E1000_TDT, e1000->tbd_tail, e1000);
+
+    while( !E1000_TDESC_STATUS_DONE(e1000->tbd[oldtail]->status) )
+    {
+      udelay(2);
+    }
+    cprintf("after while loop\n");
+  }
+  
 }
 
 int e1000_init(struct pci_func *pcif, void** driver, uint8_t *mac_addr) {
