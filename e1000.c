@@ -179,12 +179,21 @@ struct packet_buf {
     uint8_t buf[2046];
 };
 
+struct filter_entry {
+  char dir[4];
+  uint8_t mac[6];
+};
+
+#define ENTRYLIMIT 32
+
 struct e1000 {
 	struct e1000_tbd *tbd[E1000_TBD_SLOTS];
 	struct e1000_rbd *rbd[E1000_RBD_SLOTS];
 
   struct packet_buf *tx_buf[E1000_TBD_SLOTS];  //packet buffer space for tbd
   struct packet_buf *rx_buf[E1000_RBD_SLOTS];  //packet buffer space for rbd
+
+  struct filter_entry *ebtable[ENTRYLIMIT];
 
   int tbd_head;
 	int tbd_tail;
