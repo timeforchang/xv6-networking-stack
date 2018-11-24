@@ -114,6 +114,7 @@ static int e1000_attach(struct pci_func *pcif) {
 	e1000_init(pcif, &nd.driver, nd.mac_addr);
 	nd.send_packet = e1000_send;
 	nd.recv_packet = e1000_recv;
+	nd.filter_packet = e1000_filter;
 	register_device(nd);
   return 0;
 }

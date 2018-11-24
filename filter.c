@@ -68,7 +68,7 @@ int main(int argc, char *argv[]) {
 		exit();
 	}
 
-  if (filter(argv[1], argv[2])) {
+  if (filter("mynet0", argv[1], argv[2])) {
     printf(1, "Set new rule failed.\n");
   }
 

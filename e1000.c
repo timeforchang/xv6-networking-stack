@@ -352,6 +352,11 @@ int e1000_init(struct pci_func *pcif, void** driver, uint8_t *mac_addr) {
     return -1;
   }
 
+  struct filter_entry *entry_tmp = (struct filter_entry*) kalloc();
+  for(int i = 0; i < ENTRYLIMT; i++) {
+    the_e1000->ebtable[i] = (struct filter_entry*) entry_tmp;
+  }
+
   //Now for the packet buffers in Receive Ring. Can fit 2 packet buf in 1 page
   struct packet_buf *tmp;
   for(int i=0; i<E1000_RBD_SLOTS; i+=2) {
@@ -412,12 +417,12 @@ cprintf("e1000:Interrupt enabled mask:0x%x\n", e1000_reg_read(E1000_IMS, the_e10
 
 
   *driver = the_e1000;
-  ebtable = (struct filter_table*) kalloc();
-  ebtable->init = 1;
-  initlock(&ebtable->lock, "ebtable");
-
   return 0;
 }
 
 void e1000_recv(void *driver, uint8_t* pkt, uint16_t length) {
+}
+
+void e1000_filter(void *driver, char* mac, char* dir) {
+  cprintf("filtering MAC: %s going/coming %s\n", mac, dir);
 }
