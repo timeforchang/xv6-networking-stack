@@ -16,11 +16,11 @@ int mac_conforms(char* src) {
 			if (src[i] != ':') {
 				return -1;
 			} else {
-				printf(1, "colon OK\n");
+				//printf(1, "colon OK\n");
 			}
 		} else {
 			if (src[i] >= 'A' && src[i] <= 'F') {
-				printf(1, "char OK\n");
+				//printf(1, "char OK\n");
 			} else {
 				return -1;
 			}
@@ -36,12 +36,14 @@ int dir_conforms(char* src) {
 		count++;
 	}
 
-	if (count < 3) {
+	if (count < 2 || count > 3) {
 		return -1;
 	}
 
 	char* in = (char*)"IN";
 	char* out = (char*)"OUT";
+
+	printf(1, "src: %s\n", src);
 
 	if (strcmp(src, in) == 0 || strcmp(src, out) == 0) {
 		printf(1, "dir OK\n");
