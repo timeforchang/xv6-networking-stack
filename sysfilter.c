@@ -19,13 +19,21 @@ int sys_filter(void) {
 
   cprintf("filtering MAC: %s going/coming %s\n", macAddr, dir);
   struct filter_entry newEntry;
-  newEntry->dir = dir;
-  newEntry->mac = macAddr;
+  safestrcpy(newEntry.dir, dir, 4);
+  safestrcpy(newEntry.mac, macAddr, 17);
+  cprintf("new entry: %s %s\n", newEntry.mac, newEntry.dir);
   for (int i = 0; i < ENTRYLIMIT; i++) {
-    if (!ebtable.entries[i]) {
-      ebtable.entries[i] = newEntry;
+    cprintf("still ok\n");
+    // cprintf("%d\n", ebtable->init);
+    //release(&ebtable->lock);
+    //
+    if (!ebtable->entries[i]) {
+      cprintf("still ok2\n");
+      memmove(ebtable->entries[i], (void*)&newEntry, sizeof(struct filter_entry));
     }
-    cprintf("ebtable[%d]: %s %s\n", i, ebtable.entries[i]->dir, ebtable.entries[i]->mac);
+    //release(&ebtable->lock);
+    //acquire(&ebtable->lock);
+    cprintf("ebtable[%d]: %s %s\n", i, ebtable->entries[i]->dir, ebtable->entries[i]->mac);
   }
 
   return 0;
