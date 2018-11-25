@@ -236,7 +236,7 @@ void e1000_send(void *driver, uint8_t *pkt, uint16_t length )
   struct e1000 *e1000 = (struct e1000*)driver;
 
   struct ethr_hdr* eth = (struct ethr_hdr*) pkt;
-  char* broadcast_mac = (char*)"FF:FF:FF:FF:FF:FF";
+  //char* broadcast_mac = (char*)"FF:FF:FF:FF:FF:FF";
   char dst_mac[18];
   char* out = (char*)"OUT";
   int match = 0;
@@ -249,11 +249,11 @@ void e1000_send(void *driver, uint8_t *pkt, uint16_t length )
         break;
       }
     }
-    cprintf("e1000->ebtable[%d]: %s %s\n", i, e1000->ebtable[i]->mac, e1000->ebtable[i]->dir);
+    //cprintf("e1000->ebtable[%d]: %s %s\n", i, e1000->ebtable[i]->mac, e1000->ebtable[i]->dir);
   }
 
   if (match == 1) {
-    cprintf("going to FF:FF:FF:FF:FF:FF\n");
+    cprintf("going to %s\n", dst_mac);
     cprintf("packet blocked from sending!\n");
   } else {
     cprintf("dst_mac: %s\n", dst_mac);
@@ -441,7 +441,7 @@ void e1000_recv(void *driver, uint8_t* pkt, uint16_t length) {
 
 void e1000_filter(void *driver, char* mac, char* dir) {
   struct e1000 *e1000 = (struct e1000*)driver;
-  cprintf("filtering MAC: %s going/coming %s\n", mac, dir);
+  //cprintf("filtering MAC: %s going/coming %s\n", mac, dir);
   int set = 0;
   for(int i = 0; i < ENTRYLIMIT; i++) {
     if(e1000->ebtable[i]->used == 0) {
@@ -455,9 +455,9 @@ void e1000_filter(void *driver, char* mac, char* dir) {
     }
   }
 
-  for (int i = 0; i < ENTRYLIMIT; i++) {
-    cprintf("e1000->ebtable[%d]: %s %s\n", i, e1000->ebtable[i]->mac, e1000->ebtable[i]->dir);
-  }
+  // for (int i = 0; i < ENTRYLIMIT; i++) {
+  //   cprintf("e1000->ebtable[%d]: %s %s\n", i, e1000->ebtable[i]->mac, e1000->ebtable[i]->dir);
+  // }
 
   if (set == 0) {
     cprintf("filter set failed\n");
