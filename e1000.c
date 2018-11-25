@@ -249,7 +249,7 @@ void e1000_send(void *driver, uint8_t *pkt, uint16_t length )
         break;
       }
     }
-    //cprintf("e1000->ebtable[%d]: %s %s\n", i, e1000->ebtable[i]->mac, e1000->ebtable[i]->dir);
+    cprintf("e1000->ebtable[%d]: %s %s\n", i, e1000->ebtable[i]->mac, e1000->ebtable[i]->dir);
   }
 
   if (match == 1) {
@@ -441,7 +441,7 @@ void e1000_recv(void *driver, uint8_t* pkt, uint16_t length) {
 
 void e1000_filter(void *driver, char* mac, char* dir, int opt) {
   struct e1000 *e1000 = (struct e1000*)driver;
-  //cprintf("filtering MAC: %s going/coming %s\n", mac, dir);
+  cprintf("filtering MAC: %s going/coming %s\n", mac, dir);
   if (opt == 1){
     int set = 0;
     for(int i = 0; i < ENTRYLIMIT; i++) {
