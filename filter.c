@@ -114,7 +114,9 @@ int main(int argc, char *argv[]) {
 			exit();
 		}
 
-		if (filter("mynet0", opt, '0', '0')) {
+		char* nothing = (char*)"0";
+
+		if (filter("mynet0", opt, nothing, nothing)) {
 	        printf(1, "Set new rule failed.\n");
 	    }
 	}
