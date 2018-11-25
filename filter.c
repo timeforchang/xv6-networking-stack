@@ -54,9 +54,33 @@ int dir_conforms(char* src) {
 	return 0;
 }
 
+int opt_conforms(char* src) {
+	int count = 0;
+	while (src[count] != '\0') {
+		count++;
+	}
+
+	if (count != 2) {
+		return -1;
+	}
+
+	char* add = (char*)"-A";
+	char* del = (char*)"-D";
+
+	printf(1, "src: %s\n", src);
+
+	if (strcmp(src, add) == 0) {
+		return 1;
+	} else if (strcmp(src, del) == 0) {
+		return 0;
+	} else {
+		return -1;
+	}
+}
+
 int main(int argc, char *argv[]) {
-	if (argc != 3) {
-		printf(1, "Unable to set new filter rule.\nUSAGE: filer <MAC> <IN/OUT>.\n");
+	if (argc != 4) {
+		printf(1, "Unable to set new filter rule.\nUSAGE: filter <OPT> <MAC> <IN/OUT>.\n");
 		exit();
 	}
 
@@ -70,9 +94,16 @@ int main(int argc, char *argv[]) {
 		exit();
 	}
 
-  if (filter("mynet0", argv[1], argv[2])) {
-    printf(1, "Set new rule failed.\n");
-  }
+	int opt = opt_conforms(argv[3]);
+
+	if (opt < 0) {
+		printf(1, "not a valid option, please use -A to add or -D to delete rule\n");
+		exit();
+	}
+
+    if (filter("mynet0", opt, argv[1], argv[2])) {
+        printf(1, "Set new rule failed.\n");
+    }
 
   exit();
 }

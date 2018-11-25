@@ -439,27 +439,46 @@ cprintf("e1000:Interrupt enabled mask:0x%x\n", e1000_reg_read(E1000_IMS, the_e10
 void e1000_recv(void *driver, uint8_t* pkt, uint16_t length) {
 }
 
-void e1000_filter(void *driver, char* mac, char* dir) {
+void e1000_filter(void *driver, char* mac, char* dir, int opt) {
   struct e1000 *e1000 = (struct e1000*)driver;
   //cprintf("filtering MAC: %s going/coming %s\n", mac, dir);
-  int set = 0;
-  for(int i = 0; i < ENTRYLIMIT; i++) {
-    if(e1000->ebtable[i]->used == 0) {
-      struct filter_entry *new_entry = (struct filter_entry*) kalloc();
-      new_entry->used = 1;
-      safestrcpy(new_entry->mac, mac, 18);
-      safestrcpy(new_entry->dir, dir, 4);
-      e1000->ebtable[i] = new_entry;
-      set = 1;
-      break;
+  if (opt == 1){
+    int set = 0;
+    for(int i = 0; i < ENTRYLIMIT; i++) {
+      if(e1000->ebtable[i]->used == 0) {
+        struct filter_entry *new_entry = (struct filter_entry*) kalloc();
+        new_entry->used = 1;
+        safestrcpy(new_entry->mac, mac, 18);
+        safestrcpy(new_entry->dir, dir, 4);
+        e1000->ebtable[i] = new_entry;
+        set = 1;
+        break;
+      }
+    }
+
+    // for (int i = 0; i < ENTRYLIMIT; i++) {
+    //   cprintf("e1000->ebtable[%d]: %s %s\n", i, e1000->ebtable[i]->mac, e1000->ebtable[i]->dir);
+    // }
+
+    if (set == 0) {
+      cprintf("filter set failed: out of entries\n");
+    }
+  } else {
+    int remvd = 0;
+    for(int i = 0; i < ENTRYLIMIT; i++) {
+      if(e1000->ebtable[i]->used == 1 && strcmp(dir, e1000->ebtable[i]->dir) == 0 && strcmp(mac, e1000->ebtable[i]->mac) == 0) {
+        struct filter_entry *new_entry = (struct filter_entry*) kalloc();
+        new_entry->used = 0;
+        safestrcpy(new_entry->mac, '\0', 1);
+        safestrcpy(new_entry->dir, '\0', 1);
+        e1000->ebtable[i] = new_entry;
+        remvd = 1;
+        break;
+      }
+    }
+    if (remvd == 0) {
+      cprintf("filter remove failed: couldn't find rule\n");
     }
   }
-
-  // for (int i = 0; i < ENTRYLIMIT; i++) {
-  //   cprintf("e1000->ebtable[%d]: %s %s\n", i, e1000->ebtable[i]->mac, e1000->ebtable[i]->dir);
-  // }
-
-  if (set == 0) {
-    cprintf("filter set failed\n");
-  }
+  
 }

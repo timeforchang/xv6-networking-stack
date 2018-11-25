@@ -15,7 +15,7 @@ struct nic_device {
   uint8_t mac_addr[6];
   void (*send_packet) (void *driver, uint8_t* pkt, uint16_t length);
   void (*recv_packet) (void *driver, uint8_t* pkt, uint16_t length);
-  void (*filter_packet) (void *driver, char* mac, char* dir);
+  void (*filter_packet) (void *driver, char* mac, char* dir, int opt);
 };
 
 //Holds the instances of nic_devices for loaded devices
