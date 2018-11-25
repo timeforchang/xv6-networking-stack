@@ -234,11 +234,26 @@ static void udelay(unsigned int u)
 void e1000_send(void *driver, uint8_t *pkt, uint16_t length )
 {
   struct e1000 *e1000 = (struct e1000*)driver;
+
   struct ethr_hdr* eth = (struct ethr_hdr*) pkt;
   char* broadcast_mac = (char*)"FF:FF:FF:FF:FF:FF";
   char dst_mac[18];
+  char* out = (char*)"OUT";
+  struct filter_entry* table = e1000->ebtable;
+  int match = 0;
+  for (int i = 0; i < ENTRYLIMIT; i++) {
+    if (strcmp(out, e1000->ebtable[i]->dir) == 0) {
+      if (strcmp(e1000->ebtable[i]->mac, dst_mac) == 0) {
+        match = 1;
+        cprintf("match!\n");
+        break;
+      }
+    }
+    cprintf("e1000->ebtable[%d]: %s %s\n", i, e1000->ebtable[i]->mac, e1000->ebtable[i]->dir);
+  }
+
   unpack_mac(eth->arp_dmac, dst_mac);
-  if (strcmp(broadcast_mac, dst_mac) == 0) {
+  if (match == 1) {
     cprintf("going to FF:FF:FF:FF:FF:FF\n");
     cprintf("packet blocked from sending!\n");
   } else {
