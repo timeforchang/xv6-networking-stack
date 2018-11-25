@@ -239,8 +239,8 @@ void e1000_send(void *driver, uint8_t *pkt, uint16_t length )
   char* broadcast_mac = (char*)"FF:FF:FF:FF:FF:FF";
   char dst_mac[18];
   char* out = (char*)"OUT";
-  struct filter_entry* table = e1000->ebtable;
   int match = 0;
+  unpack_mac(eth->arp_dmac, dst_mac);
   for (int i = 0; i < ENTRYLIMIT; i++) {
     if (strcmp(out, e1000->ebtable[i]->dir) == 0) {
       if (strcmp(e1000->ebtable[i]->mac, dst_mac) == 0) {
@@ -252,7 +252,6 @@ void e1000_send(void *driver, uint8_t *pkt, uint16_t length )
     cprintf("e1000->ebtable[%d]: %s %s\n", i, e1000->ebtable[i]->mac, e1000->ebtable[i]->dir);
   }
 
-  unpack_mac(eth->arp_dmac, dst_mac);
   if (match == 1) {
     cprintf("going to FF:FF:FF:FF:FF:FF\n");
     cprintf("packet blocked from sending!\n");
