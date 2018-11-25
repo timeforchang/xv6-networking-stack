@@ -84,17 +84,17 @@ int main(int argc, char *argv[]) {
 		exit();
 	}
 
-	if (mac_conforms(argv[1]) < 0) {
+	if (mac_conforms(argv[2]) < 0) {
 		printf(1, "MAC address doesn't conform, please make sure all letters are in caps and it is in the correct MAC address format\n");
 		exit();
 	}
 
-	if (dir_conforms(argv[2]) < 0) {
+	if (dir_conforms(argv[3]) < 0) {
 		printf(1, "direction doesn't conform, please type 'IN' or 'OUT'\n");
 		exit();
 	}
 
-	int opt = opt_conforms(argv[3]);
+	int opt = opt_conforms(argv[1]);
 
 	if (opt < 0) {
 		printf(1, "not a valid option, please use -A to add or -D to delete rule\n");

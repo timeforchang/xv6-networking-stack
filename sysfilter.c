@@ -13,7 +13,7 @@ int sys_filter(void) {
   char *macAddr, *dir, *interface;
   int opt;
 
-  if(argstr(0, &interface) < 0 || argsint(1, &opt) < 0 || argstr(2, &macAddr) < 0 || argstr(3, &dir) < 0) {
+  if(argstr(0, &interface) < 0 || argint(1, &opt) < 0 || argstr(2, &macAddr) < 0 || argstr(3, &dir) < 0) {
     cprintf("ERROR: sys_filter: Failed to fetch arguments");
     return -1;
   }

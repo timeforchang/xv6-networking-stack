@@ -256,8 +256,8 @@ void e1000_send(void *driver, uint8_t *pkt, uint16_t length )
     cprintf("going to %s\n", dst_mac);
     cprintf("packet blocked from sending!\n");
   } else {
-    cprintf("dst_mac: %s\n", dst_mac);
-    cprintf("my_mac: %s\n", broadcast_mac);
+    // cprintf("dst_mac: %s\n", dst_mac);
+    // cprintf("my_mac: %s\n", broadcast_mac);
 
     cprintf("e1000 driver: Sending packet of length:0x%x %x starting at physical address:0x%x\n", length, sizeof(struct ethr_hdr), V2P(e1000->tx_buf[e1000->tbd_tail]));
     memset(e1000->tbd[e1000->tbd_tail], 0, sizeof(struct e1000_tbd));
