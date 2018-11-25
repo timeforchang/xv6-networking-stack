@@ -249,7 +249,7 @@ void e1000_send(void *driver, uint8_t *pkt, uint16_t length )
         break;
       }
     }
-    cprintf("e1000->ebtable[%d]: %s %s\n", i, e1000->ebtable[i]->mac, e1000->ebtable[i]->dir);
+    //cprintf("e1000->ebtable[%d]: %s %s\n", i, e1000->ebtable[i]->mac, e1000->ebtable[i]->dir);
   }
 
   if (match == 1) {
@@ -463,7 +463,7 @@ void e1000_filter(void *driver, char* mac, char* dir, int opt) {
     if (set == 0) {
       cprintf("filter set failed: out of entries\n");
     }
-  } else {
+  } else if (opt == 0) {
     int remvd = 0;
     for(int i = 0; i < ENTRYLIMIT; i++) {
       if(e1000->ebtable[i]->used == 1 && strcmp(dir, e1000->ebtable[i]->dir) == 0 && strcmp(mac, e1000->ebtable[i]->mac) == 0) {
@@ -478,6 +478,10 @@ void e1000_filter(void *driver, char* mac, char* dir, int opt) {
     }
     if (remvd == 0) {
       cprintf("filter remove failed: couldn't find rule\n");
+    }
+  } else {
+    for (int i = 0; i < ENTRYLIMIT; i++) {
+      cprintf("e1000->ebtable[%d]: %s %s\n", i, e1000->ebtable[i]->mac, e1000->ebtable[i]->dir);
     }
   }
   

@@ -66,6 +66,7 @@ int opt_conforms(char* src) {
 
 	char* add = (char*)"-A";
 	char* del = (char*)"-D";
+	char* list = (char*)"-L";
 
 	printf(1, "src: %s\n", src);
 
@@ -73,27 +74,14 @@ int opt_conforms(char* src) {
 		return 1;
 	} else if (strcmp(src, del) == 0) {
 		return 0;
+	} else if (strcmp(src, list) == 0) {
+		return 2;
 	} else {
 		return -1;
 	}
 }
 
 int main(int argc, char *argv[]) {
-	if (argc != 4) {
-		printf(1, "Unable to set new filter rule.\nUSAGE: filter <OPT> <MAC> <IN/OUT>.\n");
-		exit();
-	}
-
-	if (mac_conforms(argv[2]) < 0) {
-		printf(1, "MAC address doesn't conform, please make sure all letters are in caps and it is in the correct MAC address format\n");
-		exit();
-	}
-
-	if (dir_conforms(argv[3]) < 0) {
-		printf(1, "direction doesn't conform, please type 'IN' or 'OUT'\n");
-		exit();
-	}
-
 	int opt = opt_conforms(argv[1]);
 
 	if (opt < 0) {
@@ -101,9 +89,37 @@ int main(int argc, char *argv[]) {
 		exit();
 	}
 
-    if (filter("mynet0", opt, argv[2], argv[3])) {
-        printf(1, "Set new rule failed.\n");
-    }
+	if (opt != 2) {
+		if (argc != 4) {
+			printf(1, "Unable to set new filter rule.\nUSAGE: filter <OPT> <MAC> <IN/OUT>.\n");
+			exit();
+		}
+
+		if (mac_conforms(argv[2]) < 0) {
+			printf(1, "MAC address doesn't conform, please make sure all letters are in caps and it is in the correct MAC address format\n");
+			exit();
+		}
+
+		if (dir_conforms(argv[3]) < 0) {
+			printf(1, "direction doesn't conform, please type 'IN' or 'OUT'\n");
+			exit();
+		}
+
+	    if (filter("mynet0", opt, argv[2], argv[3])) {
+	        printf(1, "Set new rule failed.\n");
+	    }
+	} else {
+		if (argc != 2) {
+			printf(1, "Unable to list filter rules.\nUSAGE: filter -L.\n");
+			exit();
+		}
+
+		if (filter("mynet0", opt, '0', '0')) {
+	        printf(1, "Set new rule failed.\n");
+	    }
+	}
+
+	
 
   exit();
 }
